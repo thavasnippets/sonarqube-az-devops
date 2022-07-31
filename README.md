@@ -5,6 +5,10 @@
 3.	Configure the SonarQube code analysis for both .net Core and React
 
 ## Solution
+<p align="center" width="100%">
+    <img width="50%" src="https://github.com/thavasnippets/sonarqube-az-devops/blob/main/Sonarqube-AZ.png">
+</p>
+
 ### SonarQube Setup:
 
 1. Launch the Azure Cloud Shell
