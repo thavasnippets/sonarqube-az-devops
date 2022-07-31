@@ -1,4 +1,4 @@
-# sonar-az-devops
+# SonarQube Setup for SPA(Reactjs) & API(.net Core) through Azure Build Pipeline
 ## Use case:
 1.	Setup the SonarQube for code analysis
 2.	Create a Build Pipeline (CI) for both .net Core and React Application using YAML
