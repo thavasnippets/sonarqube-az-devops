@@ -1,0 +1,99 @@
+trigger:
+  - master
+stages:
+  - stage: Build
+  - job: API_BUILD
+    displayName: dotnet component build
+    pool:
+      name: Azure Pipelines
+      vmImage: windows-latest
+      demands:
+      - msbuild
+      - visualstudio
+      - java
+    variables:
+    - name: solution
+      value: '**/*.sln'
+    - name: buildPlatform
+      value: 'Any CPU'
+    - name: buildConfiguration
+      value: 'Release'
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'Install .net Core Dependencies For API'
+      inputs:
+        command: restore
+        projects: api/api-solution.sln
+    - task: SonarQubePrepare@5
+      inputs:
+        SonarQube: 'sonar'
+        scannerMode: 'MSBuild'
+        projectKey: '<<PROJECT KEY FROM SONARQUBE>>'
+    - task: DotNetCoreCLI@2
+      displayName: 'Build API Service'
+      inputs:
+        projects: api/api-solution.sln
+        arguments: '/p:TargetProfile=$(TargetProfile)'
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish API Binaries'
+      inputs:
+        command: publish
+        publishWebProjects: false        
+        projects: api/api-solution.sln
+        arguments: '--configuration $(BuildConfiguration) --output $(build.artifactstagingdirectory)'
+        zipAfterPublish: True
+    - task: SonarQubeAnalyze@5
+    - task: SonarQubePublish@5
+      inputs:
+        pollingTimeoutSec: '300'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifacts'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)'
+      condition: succeededOrFailed()
+  - job: UI_BUILD
+    displayName: To Build Reactjs UI
+    pool:
+      name: Azure Pipelines
+      vmImage: windows-latest
+      demands:
+      - msbuild
+      - visualstudio
+      - java
+    steps:
+    - task: NodeTool@0
+      displayName: Node
+      inputs:
+        versionSpec: 14.16
+    - task: Npm@1
+      displayName: 'npm Install'
+      inputs:
+        workingDir: 'ui'
+        verbose: false
+    - task: SonarQubePrepare@5
+      inputs:
+        SonarQube: sonar
+        scannerMode: CLI
+        configMode: manual
+        cliProjectKey: '<<SONARQUBE PROJECT KEY>>'
+        cliProjectName: <<SONARQUBE PROJECT NAME>>
+        cliSources: 'ui'
+    - task: CmdLine@2
+      inputs:
+        script: "cd $(System.DefaultWorkingDirectory)/ui\n npm run build \n displayName: 'Build React Application'\n"
+    - task: ArchiveFiles@2
+      displayName: 'Build Archive'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/ui/build/'
+        includeRootFolder: false
+        archiveFile: '$(Build.ArtifactStagingDirectory)/ui.zip'
+    - task: SonarQubeAnalyze@5
+    - task: SonarQubePublish@5
+      inputs:
+        pollingTimeoutSec: '300'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)/ui.zip'
+
+

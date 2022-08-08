@@ -30,3 +30,49 @@ az container create -g rg-sonarqube \
 5. Login with Default username(admin) and Passcode(admin) 
 
 6. Click on the Create New project and select Azure pipeline and follow the steps given there.
+
+## Azure Build Pipeline Setup:
+
+### .NET Web API:
+
+1. Prepare Analysis Configuration (Before Build)
+```yaml
+- task: SonarQubePrepare@5
+      inputs:
+        SonarQube: 'sonar' #Service Connection Name
+        scannerMode: 'MSBuild'
+        projectKey: '<<PROJECT KEY FROM SONARQUBE>>' 
+```
+2. Run Code Analysis (After Build)
+```yaml
+ - task: SonarQubeAnalyze@5
+```
+3. Publish Code Analysis
+```yaml
+- task: SonarQubePublish@5
+```
+
+### Reactjs UI:-
+1. Prepare Analysis Configuration (Before Build)
+```yaml
+- task: SonarQubePrepare@5
+      inputs:
+        SonarQube: sonar  #Service Connection Name
+        scannerMode: CLI
+        configMode: manual
+        cliProjectKey: '<<SONARQUBE PROJECT KEY>>'
+        cliProjectName: <<SONARQUBE PROJECT NAME>>
+        cliSources: 'ui'
+```
+2. Run Code Analysis (After Build)
+```yaml
+ - task: SonarQubeAnalyze@5
+```
+3. Publish Code Analysis
+```yaml
+- task: SonarQubePublish@5
+```
+
+#### Its Completed!
+
+### Happy Coding!
