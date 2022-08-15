@@ -1,8 +1,8 @@
-# SonarQube Setup for SPA(Reactjs) & API(.net Core) through Azure Build Pipeline
+# SonarQube Setup for SPA(ReactJS) & API(.Net 5.0) through Azure Build Pipeline
 ## Use case:
 1.	Setup the SonarQube for code analysis
 2.	Create a Build Pipeline (CI) for both .net Core and React Application using YAML
-3.	Configure the SonarQube code analysis for both .net Core and React
+3.	Configure the SonarQube code analysis for both .net 5.0  and React
 
 ## Solution 1 (Using Container Instance)
 <p align="center" width="100%">
@@ -10,7 +10,6 @@
 </p>
 
 ### SonarQube Setup:
-
 1. Launch the Azure Cloud Shell
 2. Create Resource group   
 ```bash
@@ -28,13 +27,17 @@ az container create -g rg-sonarqube \
 --protocol TCP \
 --ports 9000  \
 ```
-4. The default port for SonarQube is 9000. l SonarQube URL will be http://<YOUR_PUBLIC_IP_ADDRESS>:9000
+4. The default port for SonarQube is 9000. SonarQube URL will be http://<YOUR_PUBLIC_IP_ADDRESS>:9000
 
 5. Login with Default username(admin) and Passcode(admin) 
 
 6. Click on the Create New project and select Azure pipeline and follow the steps given there.
 
 ## Solution 2 (Using Virtual Machine)
+<p align="center" width="100%">
+    <img width="50%" src="https://github.com/thavasnippets/sonarqube-az-devops/blob/ab1e8d86d9b305e0741fcc8c528381537cc94818/Sonarqube-AZVM.png">
+</p>
+
 1. Launch the Azure Cloud Shell
 2. Create Resource group   
 ```bash
@@ -92,14 +95,18 @@ sudo sysctl -w vm.max_map_count=262144
 sudo docker-compose up -d
 sudo docker-compose logs --follow' 
 ```
-4. The default port for SonarQube is 9000. SonarQube URL will be http://<YOUR_PUBLIC_IP_ADDRESS>:9000
+6. The default port for SonarQube is 9000. SonarQube URL will be http://<YOUR_PUBLIC_IP_ADDRESS>:9000
 
-5. Login with Default username(admin) and Passcode(admin) 
+7. Login with Default username(admin) and Passcode(admin) 
 
-6. Click on the Create New project and select Azure pipeline and follow the steps given there.
+8. Click on the Create New project and select Azure pipeline and follow the steps given there.
 
 ## Move the Data to external database
 In the above 2 solutions the data is getting saved in the local (i.e inside the continer or VM  instance) if the container restarts or the Sonarqube crashes we will  endup with configuation and data losses. To avoid we can move the data to external database using JDBC Configuation 
+
+<p align="center" width="100%">
+    <img width="50%" src="https://github.com/thavasnippets/sonarqube-az-devops/blob/ab1e8d86d9b305e0741fcc8c528381537cc94818/Sonarqube-AZ-VM-DB.png">
+</p>
 
 ### Assumption:
 SQL Server is already created
@@ -131,7 +138,6 @@ volumes:
   sonarqube_db:
   sonarqube_extensions:
 ```
-
 
 ## Azure Build Pipeline Setup:
 
