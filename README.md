@@ -4,7 +4,7 @@
 2.	Create a Build Pipeline (CI) for both .net Core and React Application using YAML
 3.	Configure the SonarQube code analysis for both .net Core and React
 
-## Solution
+## Solution 1 (Using Container Instance)
 <p align="center" width="100%">
     <img width="50%" src="https://github.com/thavasnippets/sonarqube-az-devops/blob/main/Sonarqube-AZ.png">
 </p>
@@ -28,12 +28,110 @@ az container create -g rg-sonarqube \
 --protocol TCP \
 --ports 9000  \
 ```
-
 4. The default port for SonarQube is 9000. l SonarQube URL will be http://<YOUR_PUBLIC_IP_ADDRESS>:9000
 
 5. Login with Default username(admin) and Passcode(admin) 
 
 6. Click on the Create New project and select Azure pipeline and follow the steps given there.
+
+## Solution 2 (Using Virtual Machine)
+1. Launch the Azure Cloud Shell
+2. Create Resource group   
+```bash
+az group create --name rg-sonarqube-vm --location eastus
+```
+3. Create Azure Virtual machine with linux(Ubuntu) image
+```
+az vm create \
+  --resource-group rg-sonarqube-vm \
+  --name vmsonarqube \
+  --image UbuntuLTS \
+  --admin-username <<USERNAME>> \
+  --admin-password <<PASSWORD>> \
+  --public-ip-address sonarPubIp \
+  --authentication-type password
+```
+4. Open 9000 port in VM
+```bash
+az vm open-port -g rg-sonarqube-vm -n vmsonarqube --port 9000 --priority 100
+```
+5. Run the below script using Runshellscript Module to do the below activities
+    1. Install and Create a docker compose file in the VM to run the sonarqube image    
+```bash
+az vm run-command invoke -g rg-sonarqube-vm -n vmsonarqube --command-id RunShellScript --scripts '
+echo "vm.max_map_count=262144" | sudo tee -a  /etc/sysctl.conf 
+echo "fs.file-max=65536" | sudo tee -a  /etc/sysctl.conf
+sudo apt-get update
+sudo apt-get install docker-compose -y
+sudo usermod -aG docker $USER
+echo "
+version: \"3\"
+services:
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+volumes:
+  sonarqube_bundled-plugins:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_db:
+  sonarqube_extensions:
+" | sudo tee /etc/docker-compose.yml
+cd /etc/
+sudo mv docker-compose.yml /
+cd /
+sudo sysctl -w vm.max_map_count=262144
+sudo docker-compose up -d
+sudo docker-compose logs --follow' 
+```
+4. The default port for SonarQube is 9000. SonarQube URL will be http://<YOUR_PUBLIC_IP_ADDRESS>:9000
+
+5. Login with Default username(admin) and Passcode(admin) 
+
+6. Click on the Create New project and select Azure pipeline and follow the steps given there.
+
+## Move the Data to external database
+In the above 2 solutions the data is getting saved in the local (i.e inside the continer or VM  instance) if the container restarts or the Sonarqube crashes we will  endup with configuation and data losses. To avoid we can move the data to external database using JDBC Configuation 
+
+### Assumption:
+SQL Server is already created
+
+### JDBC Configuration
+```yaml
+version: "3"
+services:
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: sonarqube
+    restart: unless-stopped
+    environment:
+      - SONARQUBE_JDBC_USERNAME=<<JDBC_USERNAME>>
+      - SONARQUBE_JDBC_PASSWORD=<<JDBC_PASSWORD>>
+      - SONARQUBE_JDBC_URL=jdbc:sqlserver://<<SQLSERVER_NAME>>.database.windows.net:1433;database=<<DATABASE_NAME>>;user=<<USERNAME>>@<<SERVER_NAME>>;password=<<PASSWORD>>;encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30
+    ports:
+      - "9000:9000"
+      - "9092:9092"
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+volumes:
+  sonarqube_bundled-plugins:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_db:
+  sonarqube_extensions:
+```
+
 
 ## Azure Build Pipeline Setup:
 
