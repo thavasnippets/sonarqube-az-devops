@@ -102,7 +102,7 @@ sudo docker-compose logs --follow' 
 8. Click on the Create New project and select Azure pipeline and follow the steps given there.
 
 ## Move the Data to external database
-In the above 2 solutions the data is getting saved in the local (i.e inside the continer or VM  instance) if the container restarts or the Sonarqube crashes we will  endup with configuation and data losses. To avoid we can move the data to external database using JDBC Configuation 
+In the above 2 solutions the data is getting saved in the local (i.e inside the container or VM  instance) if the container restarts or the Sonarqube crashes we will  endup with configuration and data losses. To avoid we can move the data to external database using JDBC Configuration 
 
 <p align="center" width="100%">
     <img width="50%" src="https://github.com/thavasnippets/sonarqube-az-devops/blob/ab1e8d86d9b305e0741fcc8c528381537cc94818/Sonarqube-AZ-VM-DB.png">
